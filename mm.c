@@ -123,7 +123,7 @@ static inline void* PREV_BLKP(void* bp) {
 static void *extend_heap(size_t words);
 static void place(void *bp, size_t asize);
 static void *find_fit(size_t asize);
-//static void *coalesce(void *bp);
+static void *coalesce(void *bp);
 static void printblock(void *bp);
 //static void checkheap(int verbose);
 //static void checkblock(void *bp);
@@ -306,18 +306,18 @@ void mm_free(void *bp)
     
     PUT(HDRP(bp), PACK(size, 0));
     PUT(FTRP(bp), PACK(size, 0));
-    //void* coloacsced = coalesce(bp);
-   // addToFront(coloacsced);
-    addToFront(bp);
+    void* coloacsced = coalesce(bp);
+    addToFront(coloacsced);
+    //addToFront(bp);
       //printf("Finished Freeing\n");
 }
 
 /* $end mmfree */
-/*
-* coalesce - Boundary tag coalescing. Return ptr to coalesced block
-*/
+
+// coalesce - Boundary tag coalescing. Return ptr to coalesced block
+
 /* $begin mmfree */
-/*
+
 static void *coalesce(void *bp)
 {
 	void* prevBlock = PREV_BLKP(bp);
@@ -372,7 +372,7 @@ static void *coalesce(void *bp)
 
 
 // mm_realloc - Naive implementation of realloc
-*/
+
 void *mm_realloc(void *ptr, size_t size)
 {
 	  //printf("Reallocing\n");
@@ -447,12 +447,12 @@ static void *extend_heap(size_t words)
     PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */ //line:vm:mm:newepihdr
     
     /* Coalesce if the previous block was free */
-   // void* coalasced = coalesce(bp);   
-  //  addToFront(coalasced);    
-  addToFront(bp);  
+   void* coalasced = coalesce(bp);   
+    addToFront(coalasced);    
+ // addToFront(bp);  
   //checkFreeList(1);
     //printf("Finished Extending Heap\n"); 
-    return bp;                               //line:vm:mm:returnblock
+    return coalasced;                               //line:vm:mm:returnblock
 }
 /* $end mmextendheap */
 
