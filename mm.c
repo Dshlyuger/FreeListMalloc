@@ -17,9 +17,9 @@
 * in, remove the #define DEBUG line. */
 #define DEBUG
 #ifdef DEBUG
-# define dbg_//printf(...) //printf(__VA_ARGS__)
+# define dbg_////printf(...) ////printf(__VA_ARGS__)
 #else
-# define dbg_//printf(...)
+# define dbg_////printf(...)
 #endif
 
 
@@ -51,13 +51,13 @@ static inline int offsetFromPrologue(void* bp) {
 GET_ALLOC(FTRP(PREV_BLKP(bp)));
 * If NEXT_FIT defined use next fit search, else use first fit search
 */
-//#define NEXT_FITx
+#define NEXT_FIT
 
 /* $begin mallocmacros */
 /* Basic constants and macros */
 #define WSIZE       4       /* Word and header/footer size (bytes) */ //line:vm:mm:beginconst
 #define DSIZE       8       /* Doubleword size (bytes) */
-#define CHUNKSIZE  (1<<12)  /* Extend heap by this amount (bytes) */  //line:vm:mm:endconst
+#define CHUNKSIZE  144  /* Extend heap by this amount (bytes) */  //line:vm:mm:endconst
 
 static inline int MAX(int x, int y) {
     return ((x) > (y)? (x) : (y));
@@ -115,9 +115,9 @@ static inline void* PREV_BLKP(void* bp) {
 /* $end mallocmacros */
 
 
-//#ifdef NEXT_FIT
-//static char *rover;           /* Next fit rover */
-//#endif
+#ifdef NEXT_FIT
+static char *rover;           /* Next fit rover */
+#endif
 
 /* Function prototypes for internal helper routines */
 static void *extend_heap(size_t words);
@@ -144,7 +144,7 @@ int mm_init(void)
     PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1)); /* Prologue header */
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
 
-////printf("epilogue (%p):n", heap_listp);
+//////printf("epilogue (%p):n", heap_listp);
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1)); /* Epilogue header */
 
     //printblock(blah);  
@@ -154,7 +154,7 @@ int mm_init(void)
     endOfFreeList = heap_listp + WSIZE;
 
     #ifdef NEXT_FIT
-    rover = heap_listp;
+    rover = headOfFreeList;
     #endif
     /* $begin mminit */
     
@@ -162,7 +162,7 @@ int mm_init(void)
     if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
     return -1;
 
-	//printf("Initialized Heap\n");
+	////printf("Initialized Heap\n");
     return 0;
 }
 /* $end mminit */
@@ -177,7 +177,7 @@ static void addToFront(void* bp){
     PUT(castedBp,0);
     if(headOfFreeList == heap_listp) {
         // In this case we make block next point to the epilogue
-        //printf("Happens Not Often\n");
+        ////printf("Happens Not Often\n");
         char * nextWord = getNextWord(castedBp);
         PUT(nextWord,0);
         
@@ -197,12 +197,12 @@ static void addToFront(void* bp){
     // new head is now the head of the list;
     headOfFreeList = castedBp;  
     //printf("Added To Front Of Free List\n"); 
-   // checkFreeList(1);
+  //  checkFreeList(1);
 }
 
 static void deleteFromFreeList(void* bp){
 	  //printf("Before Delete\n");
-	 // checkFreeList(1);
+	  //checkFreeList(1);
 	  //printf("Block that I am deleting \n");
 	  printblock(bp);
 	char* castedBp = (char*)(bp);
@@ -213,25 +213,44 @@ static void deleteFromFreeList(void* bp){
 	// Free List is now empty so the head of the freelist just points to the prologue
 	if(prevBlockInFreeList == heap_listp && nextBlockInFreeList == heap_listp){
 		headOfFreeList = heap_listp;
-		//printf("Free List Empty \n");
+		#ifdef NEXT_FIT
+		rover = heap_listp;
+		#endif
+		////printf("Free List Empty \n");
 	}
 	else if(nextBlockInFreeList == heap_listp){
 		// in this case previous block now points to end
-		//printf("Epilogue Case \n");
+		////printf("Epilogue Case \n");
+		#ifdef NEXT_FIT
+		if(rover == castedBp){
+			rover = prevBlockInFreeList;
+		}
+		#endif
 		PUT(getNextWord(prevBlockInFreeList),0);
 	}
 
 	else if(prevBlockInFreeList == heap_listp){
-		//printf("Prologue Case \n");
+		////printf("Prologue Case \n");
 		// In this case we are deleting the front of the freelist so
 		// our successor block now points to the prologue and is the head of the free list
+		#ifdef NEXT_FIT
+		if(rover == castedBp){
+			rover = nextBlockInFreeList;
+		}
+		#endif
+
 		PUT(nextBlockInFreeList,0);
 		headOfFreeList = nextBlockInFreeList;
 	}
 
 	else{
 		// preddessor block now points to the deleted blocks successor;
-		//printf("Two blocks adjacent\n");
+		////printf("Two blocks adjacent\n");
+		#ifdef NEXT_FIT
+		if(rover == castedBp){
+		  rover = prevBlockInFreeList;
+		}
+		#endif
 		PUT(getNextWord(prevBlockInFreeList),offsetFromPrologue(nextBlockInFreeList));
 		// successor block now points back to deleted blocks preddessor;
 		PUT(nextBlockInFreeList,offsetFromPrologue(prevBlockInFreeList));
@@ -280,7 +299,7 @@ void *mm_malloc(size_t size)
     if ((bp = extend_heap(extendsize / WSIZE)) == NULL)
     return NULL;                                  //line:vm:mm:growheap2
     place(bp, asize);    
-    //printf("Finished Mallocing\n");                             //line:vm:mm:growheap3
+    ////printf("Finished Mallocing\n");                             //line:vm:mm:growheap3
     return bp;
 }
 /* $end mmmalloc */
@@ -291,7 +310,7 @@ void *mm_malloc(size_t size)
 /* $begin mmfree */
 void mm_free(void *bp)
 {
-	  //printf("Freeing\n");
+	  ////printf("Freeing\n");
     /* $end mmfree */
     if (bp == 0)
     return;
@@ -309,7 +328,7 @@ void mm_free(void *bp)
     void* coloacsced = coalesce(bp);
     addToFront(coloacsced);
     //addToFront(bp);
-      //printf("Finished Freeing\n");
+      ////printf("Finished Freeing\n");
 }
 
 /* $end mmfree */
@@ -362,8 +381,10 @@ static void *coalesce(void *bp)
     #ifdef NEXT_FIT
     // Make sure the rover isn't pointing into the free block //
     // that we just coalesced //
-    if ((rover > (char *)bp) && (rover < NEXT_BLKP(bp)))
+    if ((rover > (char *)bp) && (rover < (char *)NEXT_BLKP(bp))){
     rover = bp;
+	//printf("that thing\n");
+	}
     #endif
     // $begin mmfree //
     return bp;
@@ -375,7 +396,7 @@ static void *coalesce(void *bp)
 
 void *mm_realloc(void *ptr, size_t size)
 {
-	  //printf("Reallocing\n");
+	  ////printf("Reallocing\n");
     size_t oldsize;
     void *newptr;
     
@@ -404,7 +425,7 @@ void *mm_realloc(void *ptr, size_t size)
     
     /* Free the old block. */
     mm_free(ptr);
-      //printf("Finished reallocing\n");
+      ////printf("Finished reallocing\n");
     return newptr;
 }
 
@@ -451,7 +472,7 @@ static void *extend_heap(size_t words)
     addToFront(coalasced);    
  // addToFront(bp);  
   //checkFreeList(1);
-    //printf("Finished Extending Heap\n"); 
+    ////printf("Finished Extending Heap\n"); 
     return coalasced;                               //line:vm:mm:returnblock
 }
 /* $end mmextendheap */
@@ -475,7 +496,7 @@ static void place(void *bp, size_t asize)
         bp = NEXT_BLKP(bp);
         PUT(HDRP(bp), PACK(csize - asize, 0));
         PUT(FTRP(bp), PACK(csize - asize, 0));
-         //printf("splitting\n");
+        //printf("splitting\n");
         addToFront(bp);
        
        // checkFreeList(1);
@@ -486,7 +507,7 @@ static void place(void *bp, size_t asize)
         deleteFromFreeList(bp);
        // checkFreeList(1);
     }
-      //printf("Finished Placing\n");
+      ////printf("Finished Placing\n");
 }
 /* $end mmplace */
 
@@ -504,14 +525,14 @@ static void *find_fit(size_t asize)
     #ifdef NEXT_FIT
     /* Next fit search */
     char *oldrover = rover;
-    
+   // //printf("POKOP");
     /* Search from the rover to the end of list */
-    for ( ; GET_SIZE(HDRP(rover)) > 0; rover = NEXT_BLKP(rover))
+    for ( ; ((char *)(rover))!=heap_listp; rover = next(rover))
     if (!GET_ALLOC(HDRP(rover)) && (asize <= GET_SIZE(HDRP(rover))))
     return rover;
     
     /* search from start of list to old rover */
-    for (rover = heap_listp; rover < oldrover; rover = NEXT_BLKP(rover))
+    for (rover = headOfFreeList; rover!= oldrover; rover = next(rover))
     if (!GET_ALLOC(HDRP(rover)) && (asize <= GET_SIZE(HDRP(rover))))
     return rover;
     
@@ -525,7 +546,7 @@ static void *find_fit(size_t asize)
         if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
         //	deleteFromFreeList(bp);
        // 	checkFreeList(1);
-        	//printf("Finished finding fit\n");
+        	////printf("Finished finding fit\n");
             return bp;
         }
     }
@@ -554,9 +575,9 @@ static void printblock(void *bp)
         //printf("%p: EOLn %zu", bp,halloc);
         return;
     }
-  //  //printf("Address (%p):n\n", bp);
+  //  ////printf("Address (%p):n\n", bp);
     //printf("Header Size %zu, Header Allocated %zu, Footer Size %zu, Footer Allocated %zu\n", hsize, halloc, fsize, falloc);
-    //    //printf("%p: header: [%p:%c] footer: [%p:%c]n", bp,
+    //    ////printf("%p: header: [%p:%c] footer: [%p:%c]n", bp,
     //    hsize, (halloc ? 'a' : 'f'),
     //    fsize, (falloc ? 'a' : 'f'));
 }
@@ -564,23 +585,25 @@ static void printblock(void *bp)
 /*
 static void checkblock(void *bp)
 {
-    if ((size_t)bp % 8)
+    if ((size_t)bp % 8){
     //printf("Error: %p is not doubleword alignedn", bp);
-    if (GET(HDRP(bp)) != GET(FTRP(bp)))
+    }
+    if (GET(HDRP(bp)) != GET(FTRP(bp))){
     //printf("Error: header does not match footern");
-
+}
 	
 }
 */
+
 /*
 void checkFreeList(int verbose){
 	char *bp = heap_listp;
     
   //  if (verbose)
-   // //printf("Heap (%p):n", heap_listp);
+   // ////printf("Heap (%p):n", heap_listp);
     
     if ((GET_SIZE(HDRP(heap_listp)) != DSIZE) || !GET_ALLOC(HDRP(heap_listp)))
-    //printf("Bad prologue headern");
+    ////printf("Bad prologue headern");
     checkblock(heap_listp);
     
     for (bp = headOfFreeList; bp!=heap_listp; bp = next(bp)) {
@@ -592,7 +615,7 @@ void checkFreeList(int verbose){
    // if (verbose)
    // printblock(bp);
     //if (bp == heap_listp){
-    ////printf("Actually went to back\n");
+    //////printf("Actually went to back\n");
   //}
 }
 */
@@ -605,10 +628,10 @@ void checkheap(int verbose)
     char *bp = heap_listp;
     
     if (verbose)
-    //printf("Heap (%p):n", heap_listp);
+    ////printf("Heap (%p):n", heap_listp);
     
     if ((GET_SIZE(HDRP(heap_listp)) != DSIZE) || !GET_ALLOC(HDRP(heap_listp)))
-    //printf("Bad prologue headern");
+    ////printf("Bad prologue headern");
     checkblock(heap_listp);
     
     for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
@@ -620,7 +643,7 @@ void checkheap(int verbose)
     if (verbose)
     printblock(bp);
     if ((GET_SIZE(HDRP(bp)) != 0) || !(GET_ALLOC(HDRP(bp))))
-    //printf("Bad epilogue headern");
+    ////printf("Bad epilogue headern");
 }
 */
 
