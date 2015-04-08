@@ -1,0 +1,69 @@
+  if(asize >= 16 && asize<= (unsigned int) 613566756){
+        printf("1");
+        return 1;
+    }
+    
+    if(asize >= (unsigned int) 613566757 && asize<=(unsigned int) 613566756*2){
+        printf("2");
+        return 2;
+    }
+    
+    if(asize >= (unsigned int) 613566756*2+1 && asize <=(unsigned int) 613566756*3){
+        printf("3");
+        return 3;
+    }
+    
+    if(asize >= (unsigned int) 613566756*3+1 && asize <=(unsigned int) 613566756*4){
+        printf("4");
+        return 4;
+    }
+    
+    if(asize >= (unsigned int) 613566756*4+1 && asize <=(unsigned int) 613566756*5){
+        printf("5");
+        return 5;
+    }
+    
+    if(asize >=(unsigned int)  613566756*5+1 && asize <=(unsigned int) 613566756*6){
+        printf("6");
+        return 6;
+    }
+
+    if(asize >=(unsigned int)  613566756*5+1 && asize <=(unsigned int) 613566756*6)
+    printf("7");
+    return 7;
+
+
+    static inline unsigned int approrpriateFreeList(unsigned int asize) {
+  //  printf("%u",asize);
+    if(asize >= 16 && asize<=31){
+        //print("1");
+        return 1;
+    }
+    
+    if(asize >= 32 && asize<=63){
+        //print("2");
+        return 2;
+    }
+    
+    if(asize >= 64 && asize <=127){
+        //print("3");
+        return 3;
+    }
+    
+    if(asize >= 128 && asize <=255){
+        //print("4");
+        return 4;
+    }
+    
+    if(asize >= 256 && asize <=511){
+        //print("5");
+        return 5;
+    }
+    
+    if(asize >= 512 && asize <=1023){
+        //print("6");
+        return 6;
+    }
+    //print("7");
+    return 7;
+}
