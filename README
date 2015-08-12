@@ -1,45 +1,41 @@
-#####################################################################
-# CS:APP Malloc Lab
-# Handout files for students
-######################################################################
+Main file to look at is mm.c
 
-***********
-Main Files:
-***********
+To see this malloc implementation work in a trace run make and then ./mdriver(driver and test code was provided by class staff)
 
-mdriver
-        Once you've run make, run ./mdriver to test your solution.
+This file contains an implementation of the malloc method in C which when given
+a size, fetches a free and approrpriate block of memory to the requester for
+use. It also includes the related methods realloc, which takes an existing
+block and expands it to be of at least the given size, calloc which mallocs
+with instantiated 0s, and free, which frees a particular block of memory and is
+used in malloc itself.
 
-traces/
-	Directory that contains the trace files that the driver uses
-	to test your solution. Files orners.rep, short2.rep, and malloc.rep
-	are tiny trace files that you can use for debugging correctness.
+The goal of this malloc implementation is not only to give an apporpriate
+block of memory to the user, but to do so quickly and without demanding to much
+memory from the heap that isn't needed.
 
-**********************************
-Other support files for the driver
-**********************************
+In general free blocks are organized into segregated free lists, seperate lists
+which contain blocks who's size falls into a particular range. In this
+implementation, If a particular free list is empty the pointer to the
+head of that freelist points to the prologue and if a particular block is
+the last block in it's free list it's next pointer also points to the prologue.
 
-config.h	Configures the malloc lab driver
-fsecs.{c,h}	Wrapper function for the different timer packages
-clock.{c,h}	Routines for accessing the Pentium and Alpha cycle counters
-fcyc.{c,h}	Timer functions based on cycle counters
-ftimer.{c,h}	Timer functions based on interval timers and gettimeofday()
-memlib.{c,h}	Models the heap and sbrk function
+On a high level, when a user wants to malloc a particular block of memory, the
+program checks to see if a free block exsists in the free list that best
+corresponds to the size requested it picks roughly the first one it encounters 
+looking ahead a set amount first to see if any following block is a better fit. 
+If such a block does not exsist in that particular freelist the program looks 
+in other buckets with free blocks large enough to accomdate the request, 
+adding back any aligned excess memory back into the freelist whenever 
+a block is found.
 
-*******************************
-Building and running the driver
-*******************************
-To build the driver, type "make" to the shell.
+If such a freeblock does not exist the program requests additional memory
+for the heap of a particular chunksize coalesces it with any neighboring
+free memory, returns the block to the user, and
+again adds back any excess aligned memory back into the approprirate free list.
 
-To run the driver on a tiny test trace:
-
-	unix> ./mdriver -V -f traces/malloc.rep
-
-To get a list of the driver flags:
-
-	unix> ./mdriver -h
-
-The -V option prints out helpful tracing information
+When a user decides to free a particulular block the program marks the block
+as unallocated, coalesces it with any adjacent free blocks and adds it to the
+approrpriate freelist.
 
 
 
